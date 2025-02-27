@@ -5,11 +5,8 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="be9deda3-8cfc-44c3-940b-dfd9e36ac10b" name="Changes" comment="">
-      <change beforePath="$PROJECT_DIR$/GA.py" beforeDir="false" afterPath="$PROJECT_DIR$/oldcode/GA.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Neuroevolution-2021-05-28-21-25.pdf" beforeDir="false" afterPath="$PROJECT_DIR$/oldcode/Neuroevolution-2021-05-28-21-25.pdf" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/README.md" beforeDir="false" afterPath="$PROJECT_DIR$/README.md" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/notes" beforeDir="false" afterPath="$PROJECT_DIR$/oldcode/notes" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/tensorTest.py" beforeDir="false" afterPath="$PROJECT_DIR$/oldcode/tensorTest.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/job_queue.py" beforeDir="false" afterPath="$PROJECT_DIR$/job_queue.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/requirements.txt" beforeDir="false" afterPath="$PROJECT_DIR$/requirements.txt" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -19,21 +16,21 @@
   <component name="Git.Settings">
     <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
   </component>
-  <component name="ProjectColorInfo"><![CDATA[{
-  "associatedIndex": 7
-}]]></component>
+  <component name="ProjectColorInfo">{
+  &quot;associatedIndex&quot;: 7
+}</component>
   <component name="ProjectId" id="2tdXNAoYZ1zy5pUmGxOM8Mfnbcn" />
   <component name="ProjectViewState">
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
   </component>
-  <component name="PropertiesComponent"><![CDATA[{
-  "keyToString": {
-    "RunOnceActivity.ShowReadmeOnStart": "true",
-    "git-widget-placeholder": "main",
-    "last_opened_file_path": "/Users/korabberisha/Documents/projects/claudes_home/Hyperparameter-optimization-and-architecture-evolution-for-Image-classification"
+  <component name="PropertiesComponent">{
+  &quot;keyToString&quot;: {
+    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
+    &quot;git-widget-placeholder&quot;: &quot;main&quot;,
+    &quot;last_opened_file_path&quot;: &quot;/Users/korabberisha/Documents/projects/claudes_home/Hyperparameter-optimization-and-architecture-evolution-for-Image-classification&quot;
   }
-}]]></component>
+}</component>
   <component name="RecentsManager">
     <key name="MoveFile.RECENT_KEYS">
       <recent name="$PROJECT_DIR$/oldcode" />
