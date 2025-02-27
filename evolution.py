@@ -9,6 +9,7 @@ import numpy as np
 from genetic_algorithm import GeneticAlgorithm
 from job_queue import JobQueue, ModelJob
 from worker_manager import GPUManager
+from visualization import ExperimentTracker
 
 def setup_directories():
     """Create necessary directories for results and models"""
@@ -31,6 +32,8 @@ def parse_args():
     # GPU settings
     parser.add_argument("--gpus", type=int, nargs="+", default=[0], 
                       help="List of GPU IDs to use")
+    parser.add_argument("--reserved_memory", type=int, default=1000,
+                      help="Amount of memory to reserve per GPU (in MB)")
     
     # Genetic algorithm parameters
     parser.add_argument("--mutation_prob", type=float, default=0.1, 
@@ -55,6 +58,10 @@ def parse_args():
                       help="Directory to save checkpoints")
     parser.add_argument("--save_freq", type=int, default=1, 
                       help="Save checkpoint every N generations")
+    
+    # Tracking and visualization
+    parser.add_argument("--tracker_dir", type=str, default="experiment_tracking",
+                      help="Directory for experiment tracking and visualization")
     
     return parser.parse_args()
 
@@ -106,7 +113,10 @@ def run_evolution(args):
     
     # Initialize components
     job_queue = JobQueue()
-    gpu_manager = GPUManager(args.gpus)
+    gpu_manager = GPUManager(args.gpus, reserved_memory_mb=args.reserved_memory)
+    
+    # Initialize experiment tracker
+    tracker = ExperimentTracker(args.tracker_dir)
     
     # Initialize or load GA
     if args.resume:
@@ -167,15 +177,18 @@ def run_evolution(args):
                 gpu_manager.release_gpu(gpu_id)
             
             # Start new jobs on available GPUs
-            while True:
-                gpu_id = gpu_manager.get_available_gpu()
-                if gpu_id is None or job_queue.is_empty():
-                    break
-                    
+            while not job_queue.is_empty():
                 job = job_queue.get_job()
                 if job:
-                    print(f"Starting model {job.individual_id} on GPU {gpu_id}")
-                    process = gpu_manager.assign_job(job, gpu_id)
+                    # Try to assign the job to a GPU with sufficient memory
+                    if gpu_manager.assign_job(job):
+                        print(f"Starting model {job.individual_id}")
+                    else:
+                        # If no GPU has enough memory, put the job back in the queue
+                        # with lower priority (higher value = lower priority)
+                        job.priority += 1
+                        job_queue.add_job(job)
+                        break  # No more GPUs available with enough memory
             
             # Sleep briefly to prevent CPU spinning
             time.sleep(1)
@@ -191,17 +204,20 @@ def run_evolution(args):
         print(f"Min fitness: {stats['min_fitness']:.4f}")
         print(f"Best chromosome: {stats['best_chromosome']}")
         
-        # 5. Save checkpoint if needed
+        # Print GPU status
+        gpu_status = gpu_manager.get_gpu_status()
+        print("\nGPU Status:")
+        for gpu_id, status in gpu_status.items():
+            print(f"  GPU {gpu_id}: {status['running_jobs']} jobs, {status['available_memory_mb']}MB free, {status['used_memory_mb']}MB used")
+        
+        # 5. Log generation to experiment tracker
+        tracker.log_generation(generation, ga.population, ga.fitness_scores, stats)
+        
+        # 6. Save checkpoint if needed
         if generation % args.save_freq == 0:
             checkpoint_path = os.path.join(args.checkpoint_dir, f"generation_{generation}")
             os.makedirs(checkpoint_path, exist_ok=True)
             ga.save_state(checkpoint_path)
-            
-            # Plot progress
-            plot_generation_stats(
-                ga.generation_stats,
-                save_path=os.path.join(checkpoint_path, "fitness_plot.png")
-            )
         
         # 6. Evolve population for next generation
         if generation < args.generations - 1:
@@ -212,11 +228,8 @@ def run_evolution(args):
     os.makedirs(final_dir, exist_ok=True)
     ga.save_state(final_dir)
     
-    # Plot final statistics
-    plot_generation_stats(
-        ga.generation_stats,
-        save_path=os.path.join(final_dir, "fitness_plot.png")
-    )
+    # Generate final report
+    tracker.generate_final_report()
     
     # Save best model to a special directory
     if ga.best_chromosome:
