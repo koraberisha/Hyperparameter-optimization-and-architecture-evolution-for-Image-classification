@@ -173,8 +173,7 @@ def run_evolution(args):
                 results[job.chromosome] = fitness
                 print(f"Model {job.individual_id} completed with fitness: {fitness:.4f}")
                 
-                # Release GPU
-                gpu_manager.release_gpu(gpu_id)
+                # Finished job was already removed from GPU in worker_manager
             
             # Start new jobs on available GPUs
             while not job_queue.is_empty():
