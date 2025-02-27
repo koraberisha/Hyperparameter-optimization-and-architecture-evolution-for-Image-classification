@@ -35,7 +35,7 @@ class GPUManager:
         command = [
             "python", "train_model.py",
             "--chromosome", job.chromosome,
-            "--gpu", str(gpu_id),
+            "--gpu", "0",  # Use GPU 0 since we're setting CUDA_VISIBLE_DEVICES
             "--generation", str(job.generation),
             "--individual_id", str(job.individual_id),
             "--output_dir", output_dir

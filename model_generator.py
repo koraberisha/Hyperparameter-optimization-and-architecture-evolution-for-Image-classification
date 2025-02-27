@@ -159,12 +159,12 @@ class CNNFromChromosome(nn.Module):
         return x
 
 
-def create_model_from_chromosome(chromosome, num_classes=10):
+def create_model_from_chromosome(chromosome, num_classes=10, use_compile=False):
     """Factory function to create model from chromosome"""
     model = CNNFromChromosome(chromosome, num_classes)
     
-    # Attempt to use torch.compile if available
-    if hasattr(torch, 'compile'):
+    # Only attempt compilation if explicitly enabled
+    if use_compile and hasattr(torch, 'compile'):
         try:
             model = torch.compile(model)
             print("Using torch.compile for model optimization")

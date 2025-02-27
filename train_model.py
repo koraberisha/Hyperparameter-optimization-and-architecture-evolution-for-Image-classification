@@ -139,8 +139,12 @@ def train_model(args):
         num_workers=2
     )
     
-    # Create model from chromosome
-    model = create_model_from_chromosome(args.chromosome, num_classes)
+    # Create model from chromosome (with compilation disabled by default)
+    model = create_model_from_chromosome(
+        args.chromosome, 
+        num_classes, 
+        use_compile=args.use_compile
+    )
     model = model.to(device)
     
     # Define loss function and optimizer
@@ -234,6 +238,7 @@ if __name__ == "__main__":
     parser.add_argument("--epochs", type=int, default=5, help="Number of epochs to train")
     parser.add_argument("--batch_size", type=int, default=128, help="Batch size")
     parser.add_argument("--learning_rate", type=float, default=0.001, help="Learning rate")
+    parser.add_argument("--use_compile", action="store_true", help="Use torch.compile for optimization (default: False)")
     
     args = parser.parse_args()
     
