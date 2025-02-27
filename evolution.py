@@ -211,8 +211,13 @@ def run_evolution(args):
             print(f"  GPU {gpu_id}: {status['running_jobs']} jobs, {status['available_memory_mb']}MB free, " 
                  f"{status['used_memory_mb']}MB used ({status['utilization_pct']:.1f}% utilized)")
             if status['job_details']:
-                print(f"    Running jobs: {', '.join([f'Gen{j['generation']}/Ind{j['individual_id']}' for j in status['job_details']])}")
-        
+                jobs = [f"Gen{j['generation']}/Ind{j['individual_id']}" for j in status['job_details']]
+                print(f"    Running jobs: {', '.join(jobs)}")
+
+
+
+
+
         # 5. Log generation to experiment tracker
         tracker.log_generation(generation, ga.population, ga.fitness_scores, stats)
         
