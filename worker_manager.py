@@ -261,7 +261,7 @@ class GPUManager:
     
     def get_available_gpu_for_job(self, job) -> Optional[int]:
         """
-        Find a GPU that can run the given job
+        Find a GPU that can run the given job using a load-balancing strategy
         
         Args:
             job: Job to run
@@ -269,12 +269,35 @@ class GPUManager:
         Returns:
             GPU ID that can run the job, or None if no GPU has enough memory
         """
-        # First try GPUs with fewest jobs
-        gpus_by_load = sorted(self.gpu_ids, key=lambda gpu_id: self.gpus[gpu_id].get_running_job_count())
+        # Calculate a score for each GPU based on:
+        # 1. Number of running jobs (fewer is better)
+        # 2. Available memory (more is better)
+        # 3. Memory required for the job (estimated)
         
-        for gpu_id in gpus_by_load:
-            if self.gpus[gpu_id].can_fit_job(job):
-                return gpu_id
+        num_classes = 100 if job.config.get("dataset") == "cifar100" else 10
+        job_memory = self.memory_tracker.estimate_model_memory(job.chromosome, num_classes)
+        
+        gpu_scores = {}
+        for gpu_id in self.gpu_ids:
+            # Skip GPUs that can't fit the job
+            if not self.gpus[gpu_id].can_fit_job(job):
+                continue
+                
+            # Calculate score components
+            running_jobs = self.gpus[gpu_id].get_running_job_count()
+            available_memory = self.memory_tracker.get_available_memory(gpu_id)
+            
+            # Normalize scores: lower is better
+            # More weight on job count for better distribution
+            job_score = running_jobs * 2.0  # Higher weight on job count
+            memory_score = job_memory / (available_memory + 1)  # +1 to avoid division by zero
+            
+            # Combined score (lower is better)
+            gpu_scores[gpu_id] = job_score + memory_score
+        
+        # Return GPU with lowest score (best candidate)
+        if gpu_scores:
+            return min(gpu_scores, key=gpu_scores.get)
         
         return None
     
@@ -323,10 +346,26 @@ class GPUManager:
             available_memory = self.memory_tracker.get_available_memory(gpu_id)
             used_memory = self.memory_tracker.memory_usage.get(gpu_id, 0)
             
+            # Get information about running jobs
+            running_jobs = gpu.get_running_job_count()
+            job_info = []
+            for job_id, (job, _, _) in gpu.running_jobs.items():
+                job_info.append({
+                    "job_id": job_id,
+                    "generation": job.generation,
+                    "individual_id": job.individual_id,
+                    "estimated_memory": self.memory_tracker.estimate_model_memory(
+                        job.chromosome, 
+                        100 if job.config.get("dataset") == "cifar100" else 10
+                    )
+                })
+            
             status[gpu_id] = {
-                "running_jobs": gpu.get_running_job_count(),
+                "running_jobs": running_jobs,
                 "available_memory_mb": available_memory,
-                "used_memory_mb": used_memory
+                "used_memory_mb": used_memory,
+                "job_details": job_info,
+                "utilization_pct": (used_memory / (used_memory + available_memory) * 100) if used_memory + available_memory > 0 else 0
             }
         
         return status

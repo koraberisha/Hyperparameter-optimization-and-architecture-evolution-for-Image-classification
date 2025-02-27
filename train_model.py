@@ -8,6 +8,7 @@ import json
 import os
 import time
 from model_generator import create_model_from_chromosome
+from torch.utils.tensorboard import SummaryWriter
 
 def load_dataset(dataset_name):
     """Load and prepare CIFAR-10 or CIFAR-100 dataset"""
@@ -160,6 +161,14 @@ def train_model(args):
         verbose=True
     )
     
+    # Set up TensorBoard SummaryWriter
+    log_dir = f"runs/gen{args.generation}_ind{args.individual_id}"
+    writer = SummaryWriter(log_dir=log_dir)
+    
+    # Log model architecture to TensorBoard
+    sample_input = torch.rand(1, 3, 32, 32).to(device)  # Sample input for CIFAR
+    writer.add_graph(model, sample_input)
+    
     # Initialize tracking variables
     start_time = time.time()
     train_losses = []
@@ -187,10 +196,20 @@ def train_model(args):
         val_losses.append(val_loss)
         val_accs.append(val_acc)
         
+        # Log metrics to TensorBoard
+        writer.add_scalar('Loss/train', train_loss, epoch)
+        writer.add_scalar('Loss/val', val_loss, epoch)
+        writer.add_scalar('Accuracy/train', train_acc, epoch)
+        writer.add_scalar('Accuracy/val', val_acc, epoch)
+        writer.add_scalar('LearningRate', optimizer.param_groups[0]['lr'], epoch)
+        
         # Save best model
         if val_acc > best_val_acc:
             best_val_acc = val_acc
             torch.save(model.state_dict(), f"{args.output_dir}/best_model.pt")
+            
+            # Log best model info to TensorBoard
+            writer.add_text('Best Model', f'New best model at epoch {epoch+1} with accuracy {val_acc:.4f}', epoch)
         
         # Log progress
         epoch_time = time.time() - epoch_start
@@ -217,11 +236,34 @@ def train_model(args):
     with open(f"{args.output_dir}/history.json", "w") as f:
         json.dump(history, f)
     
+    # Add hyperparameters to TensorBoard
+    hparams = {
+        'chromosome': args.chromosome,
+        'learning_rate': args.learning_rate,
+        'batch_size': args.batch_size,
+        'epochs': args.epochs,
+        'dataset': args.dataset,
+        'use_compile': args.use_compile
+    }
+    
+    # Log hyperparameters and final metrics
+    writer.add_hparams(
+        hparams,
+        {
+            'hparam/best_accuracy': best_val_acc,
+            'hparam/final_accuracy': val_accs[-1],
+            'hparam/final_loss': val_losses[-1]
+        }
+    )
+    
     # Save model summary as text
     with open(f"{args.output_dir}/model_summary.txt", "w") as f:
         f.write(f"Chromosome: {args.chromosome}\n")
         f.write(f"Final validation accuracy: {val_accs[-1]:.4f}\n")
         f.write(f"Best validation accuracy: {best_val_acc:.4f}\n")
+    
+    # Close TensorBoard writer
+    writer.close()
     
     # Return best validation accuracy as fitness
     return best_val_acc

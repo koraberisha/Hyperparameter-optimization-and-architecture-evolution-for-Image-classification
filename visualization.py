@@ -7,6 +7,7 @@ from typing import List, Dict, Any
 import seaborn as sns
 from matplotlib.figure import Figure
 import time
+import threading
 
 
 class ExperimentTracker:

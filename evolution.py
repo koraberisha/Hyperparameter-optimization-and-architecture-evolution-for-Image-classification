@@ -110,6 +110,7 @@ def run_evolution(args):
     # Setup directories
     setup_directories()
     os.makedirs(args.checkpoint_dir, exist_ok=True)
+    os.makedirs("runs", exist_ok=True)  # For TensorBoard logs
     
     # Initialize components
     job_queue = JobQueue()
@@ -203,11 +204,14 @@ def run_evolution(args):
         print(f"Min fitness: {stats['min_fitness']:.4f}")
         print(f"Best chromosome: {stats['best_chromosome']}")
         
-        # Print GPU status
+        # Print GPU status with load balancing information
         gpu_status = gpu_manager.get_gpu_status()
         print("\nGPU Status:")
         for gpu_id, status in gpu_status.items():
-            print(f"  GPU {gpu_id}: {status['running_jobs']} jobs, {status['available_memory_mb']}MB free, {status['used_memory_mb']}MB used")
+            print(f"  GPU {gpu_id}: {status['running_jobs']} jobs, {status['available_memory_mb']}MB free, " 
+                 f"{status['used_memory_mb']}MB used ({status['utilization_pct']:.1f}% utilized)")
+            if status['job_details']:
+                print(f"    Running jobs: {', '.join([f'Gen{j['generation']}/Ind{j['individual_id']}' for j in status['job_details']])}")
         
         # 5. Log generation to experiment tracker
         tracker.log_generation(generation, ga.population, ga.fitness_scores, stats)
