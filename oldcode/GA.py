@@ -57,7 +57,7 @@ def fitness(individual): # fitness = number of 1s in individual
     out1,conv1,acti1,pool2,lchoice = convert_bitstring(individual)
     print("++++++++++++++++++++++++++++++++++++++++++++")
     print(individual)
-    fitnessfor = tensorTest.compile_model(out1,conv1,acti1,0,0,0,0,0,0,0,pool2,lchoice)
+    fitnessfor = tensorTest.compile_model(out1, conv1, acti1, 0, 0, 0, 0, 0, 0, 0, pool2, lchoice)
 
     print(fitnessfor)
     return fitnessfor[len(fitnessfor)-1]

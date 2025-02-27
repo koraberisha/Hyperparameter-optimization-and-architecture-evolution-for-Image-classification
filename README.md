@@ -1,65 +1,129 @@
 # Hyperparameter Optimization and Architecture Evolution in CNNs for Image Classification
 
-This repository contains the implementation and research paper for a project on evolving convolutional neural network (CNN) architectures and hyperparameters using genetic algorithms, focused on image classification tasks.
+This repository contains a modernized implementation for evolving convolutional neural network (CNN) architectures and hyperparameters using genetic algorithms, focused on image classification tasks.
 
-## Paper
+## Overview
 
-The paper [Hyperparameter optimization and architecture evolution in Convolutional Neural Networks for Image classification](Neuroevolution-2021-05-28-21-25.pdf) presents a novel approach to autonomously generating effective CNN architectures. Key aspects include:
+The project implements a novel approach to autonomously generating effective CNN architectures through evolutionary algorithms. Key aspects include:
 
 - Utilizing genetic algorithms to evolve CNN architecture-parameter combinations
+- Task-based parallel training for efficient multi-GPU utilization
 - Evaluating performance on CIFAR-10 and CIFAR-100 datasets
 - Encoding CNN structures and hyperparameters into binary chromosomes
 - Analyzing the impact of different CNN components on network efficacy
-- Balancing performance optimization with computational constraints
 
-## Implementation
+## Architecture
 
-The core components of the system are:
+The modernized codebase is implemented in PyTorch with horizontal scaling capabilities:
 
-- `GA.py`: Implements the genetic algorithm, including:
-  - Population initialization
-  - Fitness evaluation
-  - Selection (tournament-based)
-  - Crossover (single-point)
-  - Mutation
-  
-- `tensorTest.py`: Handles CNN-related operations:
-  - Dynamic model generation based on chromosome encoding
-  - Model compilation and training
-  - Performance evaluation
+- **Distributed Training System**: Each model trains independently on available GPUs
+- **PyTorch Implementation**: Modern CNN architecture with torch.compile optimization
+- **Checkpointing**: Save and resume experiments at any generation
+- **Result Analysis**: Comprehensive visualization of fitness progression
 
-### Key Features
+## Core Components
 
-- Flexible CNN architecture generation using a base feature extraction block
-- Binary encoding scheme for hyperparameters and network structure
-- Fitness evaluation using validation accuracy
-- Adaptive network depth and structure based on genetic encoding
+- `genetic_algorithm.py`: Implements the genetic algorithm engine
+- `model_generator.py`: Generates PyTorch CNN models from binary chromosome encoding
+- `train_model.py`: Single model training and evaluation
+- `worker_manager.py`: Manages GPU resources and job assignments
+- `job_queue.py`: Prioritized job queue for model training
+- `evolution.py`: Main script coordinating the evolution process
+- `evaluate.py`: Detailed evaluation of trained models
 
-## Methodology
+## Installation
 
-1. Initialize a population of binary-encoded CNN configurations
-2. Generate and train CNNs based on each chromosome
-3. Evaluate fitness using validation accuracy
-4. Select best-performing individuals
-5. Apply genetic operators (crossover, mutation) to create next generation
-6. Repeat for specified number of generations
+```bash
+# Clone the repository
+git clone https://github.com/yourusername/cnn-hyperparameter-evolution.git
+cd cnn-hyperparameter-evolution
+
+# Create a virtual environment (optional but recommended)
+python -m venv venv
+source venv/bin/activate  # On Windows: venv\Scripts\activate
+
+# Install dependencies
+pip install torch torchvision matplotlib numpy scikit-learn seaborn
+```
+
+## Usage
+
+### Running an Evolution Experiment
+
+To start a new evolutionary run with default parameters:
+
+```bash
+python evolution.py --generations 20 --population 10 --gpus 0 1 2 3
+```
+
+Common configuration options:
+
+```bash
+# Run on CIFAR-100 with larger population
+python evolution.py --dataset cifar100 --population 20 --generations 30 --gpus 0 1 2 3
+
+# Run with custom genetic algorithm parameters
+python evolution.py --mutation_prob 0.2 --tournament_size 4 --elitism 3 --gpus 0 1
+
+# Run with specific training settings
+python evolution.py --epochs 10 --batch_size 64 --gpus 0 1 2 3
+```
+
+### Resuming a Previous Run
+
+To resume from a checkpoint:
+
+```bash
+python evolution.py --resume checkpoints/generation_5/ga_state.json --gpus 0 1 2 3
+```
+
+### Evaluating a Trained Model
+
+To evaluate a trained model:
+
+```bash
+# Evaluate using model info file (contains chromosome)
+python evaluate.py --model_path best_model/best_model.pt --info_path best_model/info.json
+
+# Evaluate with explicit chromosome (for custom evaluations)
+python evaluate.py --model_path results/gen3/ind2/best_model.pt --chromosome 0110010110110011010 --dataset cifar10
+```
+
+## Binary Encoding Scheme
+
+The CNN architecture and hyperparameters are encoded in a binary chromosome:
+
+- Bits 0-1: Filter size multiplier
+- Bits 3-4: Kernel size selection 
+- Bits 6-7: Activation function type
+- Bits 9-10: Pooling settings
+- Bits 12-18: Feature extraction layers (1 = single conv layer, 0 = double conv layer)
 
 ## Results
 
 The project demonstrates the potential of genetic algorithms in CNN optimization:
 
-- Performance improved over generations, with later generations showing more consistent results
-- Best evolved architecture achieved ~78% accuracy on CIFAR-10 and ~45% on CIFAR-100
-- Analysis of evolved architectures provides insights into effective CNN designs
-- Early-epoch performance showed correlation with final model efficacy
+- Performance improves over generations, with later generations showing more consistent results
+- Best evolved architectures achieve competitive accuracy on classification tasks
+- Task-based parallelism allows larger populations and more generations than the original implementation
+- Modern PyTorch implementation offers better performance and compatibility
 
-## Limitations and Future Work
+## Scaling
 
-- Computational constraints limited the population size and number of generations
-- Potential for improvement with distributed or parallel computing systems
-- Opportunity to expand the parameter space and apply to more complex datasets
-- Further investigation into the relationship between early-epoch performance and final model accuracy
+The implementation is designed for efficient scaling:
 
-## Usage
+- **Single Machine, Multiple GPUs**: Uses all available GPUs on a single machine
+- **Checkpoint-Based Distribution**: Run different generations on different machines
+- **Resource Scalability**: Performance scales linearly with available GPUs
 
-To run the genetic algorithm optimization:
+## Future Work
+
+- Implementation of early stopping for poor-performing models
+- Support for more diverse datasets beyond CIFAR
+- Integration with hyperparameter optimization libraries
+- Multi-objective optimization (accuracy, model size, inference speed)
+- Advanced visualizations of model architectures
+
+## Original Paper
+
+For a deeper understanding of the underlying concepts, refer to the original research paper [Hyperparameter optimization and architecture evolution in Convolutional Neural Networks for Image classification](oldcode/Neuroevolution-2021-05-28-21-25.pdf) included in this repository.

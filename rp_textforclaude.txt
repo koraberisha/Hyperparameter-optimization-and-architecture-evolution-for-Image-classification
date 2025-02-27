@@ -1,0 +1,551 @@
+
+as tensorflow and keras. The concept suggested
+aims to provide a baseline CNN architecture, and
+develop combinations of possible architecture-
+parameter choices in order to find optimal local
+solutions.
+3.1.1. CNN Generation
+Feature Extraction Block. In order to allow CNN
+generation of different sizes and structures, a
+baseline feature extraction block was selected in
+order to be used as a building block of the CNN.
+This consisted of a 2 dimensional convolutional
+layer with a argument based number of filters,
+the stride of these layers is set to 1. This was de-
+cided through testing and evaluation of large sets
+of generated models with the stride as the depen-
+dent variable. A smaller stride increased compu-
+tational cost however improved performance so it
+was chosen as part of the baseline selection. An
+activation function is used on the output for the
+conv layer in order to calculate activation prob-
+ability and further add a bias to the weight in
+order to either increase or decrease likelihood of
+neuronal activation based off of the effectiveness
+of the direction of change in the weight.
+1 def conv_layergen(model,ksize,
+inputsize,acti):
+2 model.add(layers.Conv2D(
+inputsize, (ksize, ksize)
+,padding="SAME",strides
+=1))
+3 model.add(layers.Activation(
+acti))
+4 model.add(layers.
+MaxPooling2D((3, 3),
+padding="SAME"))
+5
+6 return model
+Code Snippet 1: Feature extraction block generation
+Test and Train dataset import and normaliza-
+tion.. The cifar10 and cifar100 datasets included
+in the keras [16] data sets are downloaded using
+tensorflow and the images for training and testing
+are separated, this set of data is then normalized
+by dividing the images by 255.0, the floating-point
+notation of the brightness value of a pixel.
+1 mnist = tf.keras.datasets.mnist
+2 (train_images, train_labels), (
+test_images, test_labels) =
+datasets.cifar100.load_data()
+3 train_images, test_images =
+train_images / 255.0,
+test_images / 255.0
+Code Snippet 2: Dataset loading, and normalization
+CNN Generation from binary encoding selection.
+The model_gen method allocates several arrays
+in which the encoding in the binary bitstring cor-
+relates to. For example characters 0-2 in the bit-
+string will be two bits, converted to an integer it is
+used as the index in the selection choices and thus
+whole bitstrings represent whole combinations of
+architecture and hyper-parameters. The parame-
+ter space for this model contains both.
+The sequential model method from Tensor-
+flow [17] initializes the stack of layers. At the
+addition of every layer in the CNN the model is
+accessed and the add method is called in order
+to insert a new layer in the model stack. After
+the input of the model, in the size of the dataset
+image resolution, in this case 2 dimensions of 32
+spatial pixels and 1 dimension of 3 colour channels
+(32x32x3). After this the loop dictating the depth
+7 May 28, 2021
+of the speciifed model begins, where the depth of
+the model is the layer_levels array content at the
+index given by the integer value of the encoded
+binary subset. The loop adds a feature extraction
+block of filter size content at index conv_selection
+in output_options. This same loop is repeated
+by the number of feature extraction points speci-
+fied again by another subset of the encoded chro-
+mosome. Finally, a dropout layer with the value
+specified by the choice in dropout options is added
+after every feature extraction layer in order to re-
+duce overfitting in certain cases.
+1 for 1 to layer_levels[
+conv_selection]
+2 if convlayers_feature[0]
+== "1":
+3 add 1 layer with 1
+conv layer to
+model with
+parameters
+4 else:
+5 add 1 layer with 2
+conv layers to
+model with
+parameters
+Code Snippet 3: Model generation based off of
+chromosome encoding (pesudocode)
+The feature extraction loop adds ends after the
+final one is added to the layer stack, the entire n x
+m x d array is then flattened into a 1 dimensional
+vector in order to be used in classification. The
+implementation of fully connected layers allows
+for high level features within the feature space
+of the network to be used as the inputs for the
+classification capabilities given by fully connected
+dense networks. These high level features are the
+indicators to the dense layers as to what the image
+is. The final dense layer is set at the number of
+classes in the dataset (100)
+1 model.add(layers.Flatten())
+2 model.add(Dense(shp[1]*2,
+activation="relu"))
+3 model.add(layers.Dropout
+(0.5))
+4 model.add(Dense(shp[1],
+activation="relu"))
+5 model.add(layers.Dropout
+(0.5))
+6 model.add(Dense(100,
+activation=’softmax’))
+Code Snippet 4: Fully Connected section, classification
+from fe
+3.2. CNN Architecture
+3.3. Binary Encoding Scheme of Hyperparameter
+chromosomes
+The computational cost of GAs is dependent on
+many factors, including the mutation rate, choice
+of selection method, population size and number
+of generations. These are tunable and selected
+based of intuitive reasoning, observation on per-
+formance is the easiest way this is done. The
+final parameter of GA that affects performance
+is the genome size. The genome size represents
+the information the algorithm is aiming to evolve
+to optimal fitness [12]. Therefore, the number of
+items is limited by the length of the binary en-
+coding. A 20 bit binary string is used in order to
+represent the information regarding the hyperpa-
+rameters and network structure. Every category
+of hyperparameter has a pre-defined number of
+choices.
+The encoding of these values represents the ac-
+tuality of the CNN architecture and combinations
+8 May 28, 2021
+of hyper parameters [18] . For example a chromo-
+some of 0110010010110 would represent an CNN
+with 28 filters in the first feature extraction sec-
+tion, the filter scale of 3 implies the number of
+filters will be scaled at every layer proportionally
+to the hierarchy and number of inputs. So for ex-
+ample if there was 3 feature extraction stages, the
+first value would be 28, the selected value, but it
+would be multiplied by the filter scale, in order to
+increase the depth, the width has to also increase
+to accommodate more features. 16*3,32*3,64*3
+= 48, 96, 192. Following this the next bit is rep-
+resentative of the kernel size, this affects the neu-
+ral network heavily due to the varying levels of
+abstraction produced by different sized kernels, a
+larger kernel produces a smaller feature map, los-
+ing data but generalizing edges blobs and possibly
+features to specific areas in categories. The num-
+ber of feature maps is stated by the 13th - 19th
+bits. Every bit represented in this subset repre-
+sents every possible feature map in the network,
+these bits themselves dictate the number of con-
+volutional layers per feature map, if the bit is a
+1, then the number of layers is one, if it is 0, then
+the number of layers is two. Initially i attempted
+to add more variation in terms of number of conv
+layers per feature map stage however the number
+of parameters in the network was high enough to
+make the entire process redundant due to the time
+needed to process multiple sets of multiple net-
+works; In combination with the fact performance
+did not drastically increase near the ceiling of the
+GA fitness rankings.
+3.4. Genetic Evolution of Hyperparameters
+There are many issues of varying importance
+when considering the autonomous selection of hy-
+per parameters in CNN’s. If the input shape of
+a convolutional network is 32x32x3, with a ker-
+nel size of 3, a stride of 2, and pooling size of
+3x3, with 32 filters, the output shape would be
+11x11x32. This is an example of a feature extrac-
+tion block in many CNN architectures(with varied
+parameters). This is applicable to many problems
+through human construction, however when con-
+sidering an autonomous alternative it seems intu-
+itive to limit options to those that would result in
+a more effective trained model, or an individual in
+the gene pool contextually. In order to overcome
+the issues regarding spatial size of convolutional
+kernels, padding is often used in order to allow
+kernel sizes not factor able into the spatial size
+to be used, in combination with only allowing a
+certain range of kernel size therefore reduces the
+size of the possible parameter space.
+Reducing the time taken to find fit neural net-
+works, the number of epochs was kept low, this
+has its effect accuracy, however as it is shown in
+the results, I found early epochs were generally a
+good sign of fitness looking ahead. The specific
+value chosen is only bounded by 1- the accuracy
+of the future depiction of the network based of
+early epoch values, and 2- the amount of time the
+user has available to themselves.
+The generation of CNN using this technique
+allows us to generate likely good candidates no
+matter the combination of choices, this is done
+to reduce the total number of possible combina-
+tions, and more importantly reducing the number
+of combinations to those whose content is viable in
+the context of accurate networks. For example a
+CNN generated by the GA which achieved a 76%
+validation accuracy on the CIFAR-10 dataset is
+illustrated in Figure 3 and in Figure 4 as a tensor
+diagram.
+9 May 28, 2021
+Figure 2: CNNGA Flowchart
+Figure 3: CNN from chromosome
+"01010001110010011100"
+Figure 4: CNN from chromosome
+"01010001110010011100" tensor blocks
+As an inductive example, this singular CNN
+classifys images effectively, it can be seen learning
+occurs between every stage of convolution. This is
+suggested by taking contextual data between con-
+volutions at every iteration and comparing bias
+and weight with their respective selves.
+These three histograms representing three of
+the convolutional layers and their bias against the
+number of epochs the network has trained on. An
+example network this information was used to en-
+sure that networks generated remained function-
+ing at the bottom end of the gene pool. It can
+be seen as the epochs progress through the first
+layer, there are many changes to the distribution
+of the bias, which can be inferred to mean some-
+thing is being learned, it is safe to assume those
+items being learned are features extracted from
+the image set as the validation accuracy of this
+network was high and proved it was an effective
+classifier.
+10 May 28, 2021
+It can be seen that this network achieved a val-
+idation accuracy of almost 78%, the training ac-
+curacy was slightly higher at 81% however this
+can be attributed to over fitting due to possible
+lack of testing data diversity, or similarly due to
+an abundance of neurons which are detrimental to
+the classification and feature extraction processes
+respectively. This methodology was used to en-
+sure the base structure and variants of said struc-
+ture would result in trainable networks. Given
+this understanding i proceeded with the experi-
+ment in order to ascertain if said development of
+networks was applicable in overall network opti-
+mization.
+4. Results and Issues
+In order to justify the usage of genetic methods
+this experimental approach aims to provide a dis-
+tinct usage for this solution over multiple data sets
+and analytical understanding of individual results
+in order to reduce the likelihood of results which
+lack replicability.
+Genetic Parameters Used:
+•Population Size = 4
+•Genome Size = 20
+•Generations = 20
+•Mutation Factor = 1 / Population Size
+Base CNN Architecture/Parameters:
+•Pooling Size = (2 x 2) [For all pooling layers]
+•Padding = Same (0 padding)
+•Three Hidden Layers consisting of:
+– 2048 Fully-Connected neurons with a
+0.5 dropout rate and ReLU activation
+layer proceeding
+– 1024 Fully-Connected neurons with a
+0.5 dropout rate and ReLU activation
+layer proceeding
+– 10/100 (CIFAR-10/CIFAR-100) Full-
+connected neurons with a SoftMax
+activation function
+•Batch Normalization at every feature extrac-
+tion stage.
+Running the software for around 2 hours with
+these values set gives us 3 generations of network
+combinations tested. The graph below shows how
+as time steps, each networks values in terms of
+validation accuracy.
+Figure 5: Generational itterations of different networks
+11 May 28, 2021
+As is visible in Figure 5 each line represents a
+singular CNN given by the current fitness test on
+the current gene. The usage of two epochs allows
+the system to run for an extended period of time
+without taking an amount of time which would
+be contextually erroneous. As is observationally
+obvious, the variation in results reduces as time
+goes forward, this indicates the genetic variation
+between the whole population is being reduced,
+to that of values which are consistently high/sim-
+ilar to other individuals in populous which have
+been propagated through the genome. The chro-
+mosome "10000000010100001000", which had the
+highest validation accuracy of the genomes within
+the third generation is taken as an example and
+will be run for 20 epochs in order to find its global
+optimum in terms of iterations run. Breaking this
+chromosome down into the network representa-
+tive, we find the first two bits relaying infroma-
+tion regarding the number of filters, most chro-
+mosomes in the population end up with the same
+two beggining bits that being 10. Given the set
+of chromosomes in the third generation.
+Table 1: Gen 3 of CIFAR-10 Evolution
+Chromosome Validation Accuaracy
+100000000101000010000.5455999970436096
+100000000000010010000.5648000240325928
+100000100000000010000.5328999757766724
+100000000000010000000.5734999775886536
+The information in Table 1 distinctly show the
+gene pool is very similar, implying the fitter por-
+tions of the chromosome have been passed down
+through parental reproduction of the fittest indi-
+viduals.
+Figure 6 indicates that this particular chromo-
+Figure 6: Training vs Testing Loss value per epoch
+some produces a network which has good distance
+from actual values, 0.8 validation loss. However,
+it can be inferred that the variance between the
+two plots is indicative of under fitting; This fur-
+ther clarifies that there is room for improvement
+given a higher number of epochs in the network
+training regiment.
+Figure 7: Training vs Testing Accuracy per epoch
+Figure 7 shows how a fit individual from an
+early generation provides a good combination of
+structure and hyper parameter choices, this is in-
+ferred from good results in accuracy scores. Ac-
+curacy scores of 78% were achieved on the testing
+data. in comparison, with high level deep con-
+volution networks (Krizhevsky et al. 2017) [19]
+achieved accuracy ratings of over 89% against the
+testing set of images on the same data set. This is
+not to indicate that the method involved in pro-
+ducing the results in Figure 7, it is entirely pos-
+sible that the increase in epochs would produce
+even closer results.
+Considering what the issue in the results may
+be, the bias in terms of every convolutional layers
+weights overlayed over time in order to make a
+comparative assessment as to what the issue could
+be.
+12 May 28, 2021
+Figure 8: Feature extraction layer one
+Figure 8 shows the bias of the first two (beggin-
+ing on the left) convolutional layers in the first of
+three feature extraction sections in the CNN. It is
+observed that in both graphs, the distribution of
+values decreases in range but increases in variance
+as epochs increase. It can be assumed this layer
+would most likely extracts effective features.
+Figure 9: Feature extraction layer two
+Figure 10: Feature extraction layer three
+Figure 9 and Figure 10 both continue down this
+same path of decreasing range and increasing vari-
+ance. Influentially it can be shown that the peaks
+in the final epoch are representative of low level
+features in the image space. These feature maps
+can be effective as it is visible as to specific areas
+on the plot, where bias is low, it is extremely low,
+almost nill; whereas where bias is high, it is very
+high, in respect to the rest of the peaks, these
+peaks being either too high or too low results in
+feature being over or under prioritized based on
+the features impact on classification itself.
+5. Conclusion
+Hyperparameter and CNN structure optimiza-
+tion remains a sough after research field. Many
+issues and problems awaiting resolutions exist. In
+conclusion, there are many different classification
+systems and the creation of them is still a disputed
+topic within computer science. It can be said the
+results in this paper indicate that there is a strong
+sign progression of network performance as gener-
+ations increase in the GA system. It can be seen
+in the results that these autonomously generated
+CNN models are effective feature extractors and
+classifiers. The entire conception of this system
+was inspired by related works and aimed to reduce
+the computational cost normally associated with
+these highly demanding systems. Pruning inef-
+fective parameters in order to allow the system
+to find its ideal choice. It can be said that the
+GAs Mutation operator does not make much of
+an impact due to the lack of ability to generalise
+the system to more generations. In conclusion,
+many network architectures such as AlexNet per-
+form similarly to the GA system proposed here,
+however the key difference is the reduced need for
+human intervention to create the CNN.
+6. Reflection and Improvements
+6.1. Changes during development
+There are countless changes from my initial pro-
+posal to my end result. The tuning and develop-
+ment of the system and the fundamental concepts
+driving it was not linear, changes made sometimes
+influenced the efficacy of the system negatively
+13 May 28, 2021
+6.2. Future work and why these issues remained
+during development
+The methodology discussed in this paper has
+boundless opportunity given unlimited time and
+computational capacity. However, the limitations
+induced by both of these factors heavily influ-
+enced the quality of the results and the breadth
+of information inferred from the experimentation.
+In combination with these issues. Applying
+this these techniques to harder data sets such as
+CIFAR-100 came with many more challenges, in
+terms of genetic search and finding optimal struc-
+tures, the GA proved itself relatively effective.
+However, the application to CIFAR-100 found the
+software taking many days to only run one or two
+populations worth of neural networks. The use
+of parallel or distributed systems is one solution
+to this issue and In retrospect, the project would
+have more statistical data in order to back up pro-
+posed solutions in the autonomous generation of
+CNN systems for image classification in the sce-
+nario where high performance computer systems
+were used.
+In an attempt to apply the same system pro-
+posed to the harder CIFAR-100 dataset, a simple
+change of the number of classes available in the
+dataset used as the number of neurons in the final
+fully connected layer in order to classify.
+Figure 11: 10 Generations of CNNs training and testing
+on CIFAR-100
+This graph shows roughly 60 separate CNN ar-
+chitecture and parameter combinations along the
+time axis. The number of epochs used in this case
+was 5 as if the system used 2 epochs such as that
+in the CIFAR-10 set as an early marker for fitness,
+it would be difficult to differentiate good and bad
+systems as they are often varied at a high degree
+in the first epochs.
+One of the better networks from this set was
+used as a sample, the network was tested over 50
+epochs instead of 5, and the results are visible
+below.
+Figure 12: Accuracy vs Validation accuracy against the
+CIFAR-100 Dataset
+Achieving an accuracy of 0.45 is sub optimal
+in terms of many state-of-the-art systems, how-
+ever the information garnered from these statis-
+tics show that given more time to run the genetic
+algorithm, even better networks would be found.
+Furthermore, running the networks for a longer
+period of time would in turn increase the accu-
+racy.
+Figure 13: Loss vs Validation loss against the CIFAR-100
+Dataset
+In the loss chart it is clear that the training and
+testing accuracy equalize. This is indicative of the
+network reaching its potential, as if the loss value
+plateaus then we know the network is not improv-
+ing in accuracy, but furthermore the predictions
+14 May 28, 2021
+being made are consistently wrong, and the degree
+of error between predictions is not reducing. The
+figures Figure 12 and Figure 13 indicates little
+over fitting occurring in the experiment. The de-
+viation between the values in both fields remains
+very small.
+Improvements upon the system would be limit-
+less if constraints were non-existent, many alter-
+native and less impact full parameters could have
+been implemented in order to fully find the opti-
+mal set of choices. Furthermore, the depth and
+breadth limits imposed by the selection choice
+were implemented to further reduce computa-
+tional cost, however undoubtedly would increase
+the selection space to that where even better com-
+binations of choices could possibly exist.
+References
+[1] M. Melo, A. D. Maximo, Cunha (2021). [link].
+URL https://arxiv.org/abs/1901.00270
+[2] F. Hutter, Beyond Manual Tuning of Hyper-
+parameters, KI - Künstliche Intelligenz 29 (4)
+(2015) 329–337.
+[3] G. Diaz.
+[4] E. Alba, M. Tomassini, Parallelism and evo-
+lutionary algorithms, IEEE Transactions on
+Evolutionary Computation 6 (5) (2002) 443–462.
+doi:10.1109/tevc.2002.800880.
+URL https://dx.doi.org/10.1109/tevc.2002.
+800880
+[5] N. S. Lele, Image Classification Using Con-
+volutional Neural Network, International Jour-
+nal of Scientific Research in Computer Sci-
+ence and Engineering 6 (3) (2018) 22–26.
+doi:10.26438/ijsrcse/v6i3.2226.
+URL https://dx.doi.org/10.26438/ijsrcse/v6i3.
+2226
+[6] A. Apicella, A survey on modern trainable ac-
+tivation functions”, Neural Networks 138 (2021)
+14–32.
+[7] S. Sharma, R. Mehra (2019). [link].
+URL https://dx.doi.org/10.2478/fcds-2019-0016
+[8] V. V. Romanuke, Appropriate Number of
+Standard 2 × 2 Max Pooling Layers and Their
+Allocation in Convolutional Neural Networks
+for Diverse and Heterogeneous Datasets, Infor-
+mation Technology and Management Science
+20 (1) (2017). doi:10.1515/itms-2017-0002.
+URL https://dx.doi.org/10.1515/itms-2017-
+0002
+[9] S. Basha, Impact of fully connected layers on
+performance of convolutional neural networks for
+image classification, Neurocomputing 378 (2020)
+112–119.
+[10] N. Et, Feature Extraction In Gene Expression
+Dataset Using Multilayer Perceptron”, Turkish
+Journal of Computer and Mathematics Educa-
+tion (TURCOMAT) 12 (2) (2021) 3069–3076.
+[11] Q. Zhu, Improving Classification Performance of
+Softmax Loss Function Based on Scalable Batch-
+Normalization”, Applied Sciences 10 (8) (2020)
+2950–2950.
+[12] J. Mccall, Genetic algorithms for modelling and
+optimisation, Journal of Computational and Ap-
+plied Mathematics 184 (1) (2005) 205–222.
+[13] P. Sharma, Analysis of Selection Schemes for
+Solving an Optimization Problem in Genetic
+Algorithm”, International Journal of Computer
+Applications 93 (11) (2014) 1–3.
+[14] A. Lipowski, D. Lipowska, Roulette-
+wheel selection via stochastic acceptance,
+Physica A: Statistical Mechanics and its
+Applications 391 (6) (2012) 2193–2196.
+doi:10.1016/j.physa.2011.12.004.
+URL https://dx.doi.org/10.1016/j.physa.2011.
+12.004
+[15] S. Samir (2020).
+[16] K. Team (2021). [link].
